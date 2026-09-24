@@ -1098,7 +1098,7 @@
 
 5059. El teléfono gratuito para las víctimas de violencia de género es el…
 
-- 16.
+- "016".
 
 5060. En España, la red de trenes puede ser de larga distancia, de media distancia y…
 

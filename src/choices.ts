@@ -26,3 +26,9 @@ export function practiceOptions(id: string, prompt: string, answer: string): str
   if (new Set(options.map(normalize)).size !== 3) throw new Error(`Opciones repetidas o equivalentes en ${id}`);
   return options;
 }
+
+// Invalid alternatives disable only this question, never the entire application.
+export function resolvePracticeOptions(id: string, prompt: string, answer: string): { options: string[]; choiceIssue?: string } {
+  try { return { options: practiceOptions(id, prompt, answer) }; }
+  catch (error) { return { options: [], choiceIssue: error instanceof Error ? error.message : 'Alternativas pendientes de revisión' }; }
+}

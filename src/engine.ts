@@ -37,3 +37,5 @@ export function decodeProgress(raw: string | null): Progress {
   if (!p || p.version !== 1 || !Array.isArray(p.attempts) || !p.attempts.every(a => a && typeof a.id === 'string' && Number.isInteger(a.taskId) && ['practice','exam','review'].includes(a.mode) && typeof a.date === 'string' && Array.isArray(a.responses) && a.responses.every(responseValid) && a.total > 0 && a.total === a.responses.length && a.score === a.responses.filter(r => r.correct).length) || !Array.isArray(p.passed) || !p.passed.every(id => Number.isInteger(id) && id >= 1 && id <= 5) || !p.mistakes || typeof p.mistakes !== 'object' || !Object.values(p.mistakes).every(responseValid) || !p.best || !Object.values(p.best).every(n => typeof n === 'number' && n >= 0 && n <= 1) || !p.last || !Number.isInteger(p.last.taskId) || p.last.taskId < 1 || p.last.taskId > 5 || typeof p.last.unitId !== 'string' || !Array.isArray(p.read) || !p.read.every(s => typeof s === 'string')) throw new Error('Progreso guardado no válido');
   return p;
 }
+
+export const availableQuestions = (questions: Question[]) => questions.filter(q => !q.choiceIssue && q.options.length >= 2);

@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 const answers: Record<string, string> = {};
 const rawBank = readFileSync('CCSE26/PreguntasyRespuestas.md', 'utf8').replace(/\*\*/g, '');
-for (const m of rawBank.matchAll(/^(\d{4})\..+\r?\n\s*\r?\n- (.+)/gm)) answers[m[1]] = m[2].trim();
+for (const m of rawBank.matchAll(/^(\d{4})\..+\r?\n\s*\r?\n- (.+)/gm)) answers[m[1]] = m[2].trim().replace(/^["“](\d+(?:[.,]\d+)?\.?)["”](\.?)$/, '$1$2');
 async function answer(page: Page, right: boolean) {
   const tag = await page.locator('.question-card .tag').innerText();
   const id = tag.match(/\d{4}/)![0];
@@ -56,7 +56,7 @@ test('lectura, búsqueda, último punto y responsive sin desbordamientos', async
   await expect(page.getByRole('button', { name: '✓ Leído', exact: true })).toBeVisible();
   await page.getByLabel('Buscar en esta tarea').fill('1091');
   await page.locator('.answer summary').click();
-  await expect(page.locator('.answer p')).toContainText('60.');
+  await expect(page.locator('.answer p')).toContainText('060.');
   await page.getByLabel('Buscar en esta tarea').fill('zzzzzzzzz');
   await expect(page.getByText('0 secciones y 0 preguntas encontradas')).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
@@ -136,7 +136,7 @@ test('repaso rápido, búsqueda, trampas y acceso a la práctica', async ({ page
   await expect(page.getByRole('heading', { name: 'Sociedad española', exact: true })).toBeVisible();
 });
 
-test('fragmento exacto en popup, discrepancia visible y cierre accesible', async ({ page }) => {
+test('fragmento exacto en popup, ceros protegidos y cierre accesible', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('navigation', { name: 'Tareas', exact: true }).getByRole('button').nth(4).click();
   await page.getByLabel('Buscar en esta tarea').fill('5059');
@@ -146,8 +146,8 @@ test('fragmento exacto en popup, discrepancia visible y cierre accesible', async
   const dialog = page.getByRole('dialog', { name: 'Fuente de la pregunta 5059' });
   await expect(dialog).toBeVisible();
   await expect(dialog).toContainText('PreguntasyRespuestas.md');
-  await expect(dialog.locator('pre')).toHaveText('5059. El teléfono gratuito para las víctimas de violencia de género es el…\n\n- 16.');
-  await expect(dialog.locator('.source-warning')).toContainText('016.');
+  await expect(dialog.locator('pre')).toHaveText('5059. El teléfono gratuito para las víctimas de violencia de género es el…\n\n- "016".');
+  await expect(dialog.locator('.source-warning')).toHaveCount(0);
   await page.screenshot({path:'test-results/source-popup.png'});
   await page.keyboard.press('Escape');
   await expect(dialog).toHaveCount(0);

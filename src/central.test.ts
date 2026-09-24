@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { parseQuestionBank, QUESTION_SOURCE } from './questionBank';
+import { parseQuestionBank, parseSourceAnswer, QUESTION_SOURCE } from './questionBank';
 import { allQuestions, attachQuestionBank, parseTask } from './content';
 import { parseQuickReview, quickSections, QUICK_SOURCE } from './quickReviewData';
 import { studyBlocks } from './studyFormat';
@@ -13,7 +13,7 @@ describe('Fuente central de preguntas y fragmentos', () => {
       expect(q.source).toBe(QUESTION_SOURCE);
       expect(q.fragment).toBe(lines.slice(q.line - 1, q.endLine).join('\n'));
       expect(q.fragment).toContain(q.prompt);
-      expect(q.fragment).toContain(`- ${q.answer}`);
+      expect(parseSourceAnswer(q.fragment.split('\n').at(-1)!.replace(/^- /, ''))).toBe(q.answer);
     }
   });
   it('usa el banco central incluso cuando el apunte antiguo discrepa', () => {
@@ -23,8 +23,8 @@ describe('Fuente central de preguntas y fragmentos', () => {
     expect(result.questions[0].prompt).toBe('Pregunta nueva');
     expect(result.questions[0].answer).toBe('Respuesta nueva');
     expect(result.questions[0].sourceNote).toContain('Respuesta antigua');
-    expect(allQuestions.find(q => q.id === '5059')?.answer).toBe('16.');
-    expect(allQuestions.find(q => q.id === '5059')?.sourceNote).toContain('016.');
+    expect(allQuestions.find(q => q.id === '5059')?.answer).toBe('016.');
+    expect(allQuestions.find(q => q.id === '5059')?.sourceNote).toBeUndefined();
   });
   it('permite apuntes de teoría sin preguntas duplicadas y añade una sección del banco', () => {
     const task = parseTask('# Teoría\nTexto de estudio', 1);

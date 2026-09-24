@@ -47,7 +47,7 @@ El parser del banco central admite preguntas y respuestas rodeadas de `**`. Las 
 
 El banco central contiene 120 + 36 + 24 + 36 + 84 preguntas. Es la única fuente de enunciados y respuestas tanto para práctica como para examen, repaso de fallos y preguntas del modo Estudiar. Las 36 preguntas de Tarea 2 usan verdadero/falso; las otras 264 ofrecen tres opciones y nunca piden escribir.
 
-Los Markdown no incluyen opciones originales. Se han redactado dos distractores de práctica por pregunta en `src/data/distractors.tsv`, identificados como no oficiales en la interfaz. No se extraen respuestas al azar de otras preguntas, lo que podría introducir varias opciones verdaderas. La respuesta correcta se inserta siempre desde el Markdown. `src/choices.ts` comprueba que las opciones sean únicas y que una huella del enunciado/respuesta coincida con el contenido revisado. Si editas una pregunta en `PreguntasyRespuestas.md`, revisa sus dos distractores y actualiza su huella con `fingerprint(prompt, answer)`; si no coincide, la app falla explícitamente para evitar alternativas obsoletas. Esa huella detecta cambios, no certifica por sí sola la calidad semántica de las alternativas.
+Los Markdown no incluyen opciones originales. Se han redactado dos distractores de práctica por pregunta en `src/data/distractors.tsv`, identificados como no oficiales en la interfaz. No se extraen respuestas al azar de otras preguntas, lo que podría introducir varias opciones verdaderas. La respuesta correcta se inserta siempre desde el Markdown. `src/choices.ts` comprueba que las opciones sean únicas y que una huella del enunciado/respuesta coincida con el contenido revisado. Si editas una pregunta en `PreguntasyRespuestas.md`, revisa sus dos distractores y actualiza su huella con `fingerprint(prompt, answer)`; si no coincide, esa pregunta se excluye de los intentos y aparece un aviso; el resto de la web sigue funcionando. La compilación de producción ejecuta las pruebas de integridad para impedir publicar una versión con alternativas pendientes. Esa huella detecta cambios, no certifica por sí sola la calidad semántica de las alternativas.
 
 En cada intento se barajan las tres opciones una sola vez; su posición se mantiene hasta responder. Verdadero/falso conserva su orden convencional. Al responder se deshabilitan los botones, se marca la opción correcta y, si procede, la elección errónea. La validación compara de forma determinista la opción seleccionada con la respuesta del archivo. No interviene IA. La normalización tipográfica anterior se conserva para mantener compatibles los intentos y fallos guardados; no se cambian la clave ni el formato de localStorage.
 
@@ -55,8 +55,8 @@ En cada intento se barajan las tres opciones una sola vez; su posición se manti
 
 Discrepancias del material que NO se han corregido:
 
-- Tarea 1, pregunta 1091: respuesta `60.` frente a `060` en la teoría. Se valida contra `60.`.
-- Pregunta 5059: el banco central responde `16.` mientras que Tarea5.md y Repasos1a5.md indican `016`. Se valida literalmente `16.` y el popup señala la discrepancia.
+- Pregunta 1091: se conserva la corrección del banco a `"060".` y se han revisado sus alternativas (112 y 016).
+- Pregunta 5059: corregida a `"016".` según la indicación del usuario. La app conserva `016.` como texto.
 - Tarea 2: el encabezado menciona 120 preguntas, pero el archivo contiene 36. Los contadores se calculan al leer las preguntas.
 
 Solo se ocultan marcadores de referencia de ChatGPT sin destino (`:chatgpt-content-reference{…}`) en la presentación; no se altera el archivo fuente. La app no certifica la actualidad ni el carácter oficial de estos resúmenes.
@@ -82,4 +82,6 @@ Configuración basada en las guías de [Vite](https://vite.dev/guide/) y [Tailwi
 
 `npm run test:e2e` ejecuta siete recorridos en Microsoft Edge instalado: examen y desbloqueo, repaso y persistencia, lectura/búsqueda, diseño móvil, verdadero/falso, recuperación ante datos corruptos, los cinco repasos rápidos, búsqueda/filtros y apertura/cierre de fuentes. Las capturas se guardan en `test-results/` (ignorado por Git). En equipos sin Edge, instalarlo o cambiar `channel` en `playwright.config.ts` e instalar el navegador de Playwright correspondiente.
 
-Validación realizada: 22 pruebas del banco/motor/formato y 7 recorridos de navegador (incluyen responder las 264 preguntas de tres opciones) aprobados; TypeScript y build de producción correctos; auditoría de dependencias sin vulnerabilidades. El archivo `package-lock.json` fija la instalación; `npm ci` permite reproducirla.
+Validación realizada: 26 pruebas del banco/motor/formato y 7 recorridos de navegador (incluyen responder las 264 preguntas de tres opciones) aprobados; TypeScript y build de producción correctos; auditoría de dependencias sin vulnerabilidades. El archivo `package-lock.json` fija la instalación; `npm ci` permite reproducirla.
+
+Las respuestas numéricas entre comillas, como `"060".` y `"016".`, se interpretan como cadenas conservando los ceros; solo se retiran las comillas de protección. El popup mantiene el fragmento literal. La compilación ejecuta las pruebas antes de generar la web, para que un banco inválido nunca sustituya una publicación funcional.

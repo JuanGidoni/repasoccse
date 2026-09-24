@@ -1,6 +1,6 @@
 import bankRaw from '../CCSE26/PreguntasyRespuestas.md?raw';
 import { parseQuestionBank } from './questionBank';
-import { practiceOptions } from "./choices";
+import { resolvePracticeOptions } from "./choices";
 export interface Question {
   id: string;
   taskId: number;
@@ -13,6 +13,7 @@ export interface Question {
   source: string;
   fragment: string;
   sourceNote?: string;
+  choiceIssue?: string;
 }
 export interface Unit {
   id: string;
@@ -165,7 +166,7 @@ export const tasks = [1, 2, 3, 4, 5].map((id) => {
   const raw = files[`../CCSE26/Tarea${id}.md`];
   if (!raw) throw new Error(`Falta CCSE26/Tarea${id}.md`);
   const task = attachQuestionBank(parseTask(raw, id), questionBank);
-  task.questions = task.questions.map(q => ({ ...q, options: practiceOptions(q.id, q.prompt, q.answer) }));
+  task.questions = task.questions.map(q => ({ ...q, ...resolvePracticeOptions(q.id, q.prompt, q.answer) }));
   return task;
 });
 export const allQuestions = tasks.flatMap((t) => t.questions);

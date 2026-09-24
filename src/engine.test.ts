@@ -1,3 +1,4 @@
+import { parseSourceAnswer } from './questionBank';
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { allQuestions, parseTask, tasks } from './content';
@@ -12,13 +13,13 @@ describe('Integridad de los cinco archivos fuente', () => {
       expect(t.questions.map(q => q.id)).toEqual(Array.from({ length: t.questions.length }, (_, i) => String(t.id * 1000 + i + 1)));
       for (const q of t.questions) {
         expect(lines[q.line - 1]).toContain(q.prompt);
-        expect(lines.slice(q.line).find(line => line.trim())).toBe(`- ${q.answer}`);
+        expect(parseSourceAnswer(lines.slice(q.line).find(line => line.trim())!.replace(/^- /, ''))).toBe(q.answer);
         expect(t.units.find(u => u.id === q.unitId)?.questionIds).toContain(q.id);
       }
     }
   });
   it('mantiene verdadero/falso, tres alternativas únicas y la respuesta original', () => {
-    expect(allQuestions.find(q => q.id === '1091')?.answer).toBe('60.');
+    expect(allQuestions.find(q => q.id === '1091')?.answer).toBe('060.');
     expect(tasks[1].questions.every(q => q.options.join(',') === 'Verdadero,Falso')).toBe(true);
     for (const q of allQuestions) {
       expect(q.options).toHaveLength(q.taskId === 2 ? 2 : 3);
