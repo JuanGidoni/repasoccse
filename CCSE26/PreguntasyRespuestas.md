@@ -362,7 +362,7 @@
 
 1091. ¿Cuál es el número de teléfono de información de la Administración General del Estado?
 
-- 60.
+- "060".
 
 1092. España está organizada en…
 
