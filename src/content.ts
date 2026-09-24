@@ -1,3 +1,6 @@
+import bankRaw from '../CCSE26/PreguntasyRespuestas.md?raw';
+import { parseQuestionBank } from './questionBank';
+import { practiceOptions } from "./choices";
 export interface Question {
   id: string;
   taskId: number;
@@ -6,6 +9,10 @@ export interface Question {
   answer: string;
   options: string[];
   line: number;
+  endLine: number;
+  source: string;
+  fragment: string;
+  sourceNote?: string;
 }
 export interface Unit {
   id: string;
@@ -30,7 +37,7 @@ const titles = [
   "Sociedad española",
 ];
 const clean = (s: string) =>
-  s.replace(/:chatgpt-content-reference\{[^}]*\}/g, "").trim();
+  s.replace(/:chatgpt-content-reference\{[^}]*\}/g, "").trimEnd();
 const plain = (s: string) => clean(s).replace(/\*\*/g, "").trim();
 
 // Retain the source hierarchy. Questions belong to their original question-bank
@@ -75,6 +82,9 @@ export function parseTask(raw: string, id: number): Task {
           ? ["Verdadero", "Falso"]
           : [],
         line: i + 1,
+        endLine: next + 1,
+        source: `CCSE26/Tarea${id}.md`,
+        fragment: lines.slice(i, next + 1).join("\n"),
       });
       current.questionIds.push(q[1]);
       i = next;
@@ -112,8 +122,6 @@ export function parseTask(raw: string, id: number): Task {
       } else current.markdown += `${line}\n`;
     }
   }
-  if (!questions.length)
-    throw new Error(`Tarea ${id}: no se encontraron preguntas`);
   return {
     id,
     title: titles[id - 1],
@@ -128,6 +136,26 @@ export function parseTask(raw: string, id: number): Task {
   };
 }
 
+export const questionBank = parseQuestionBank(bankRaw);
+
+// Legacy questions only locate the reading section. They never validate answers.
+export function attachQuestionBank(task: Task, bank: Question[]): Task {
+  const selected = bank.filter(q => q.taskId === task.id);
+  if (!selected.length) throw new Error(`Faltan preguntas de la tarea ${task.id} en el banco central`);
+  const old = new Map(task.questions.map(q => [q.id, q]));
+  const questions = selected.map(q => {
+    const previous = old.get(q.id);
+    const sourceNote = previous && previous.answer !== q.answer
+      ? `Diferencia entre archivos: el banco central responde «${q.answer}» y Tarea${task.id}.md responde «${previous.answer}». Se valida literalmente con el banco central.`
+      : undefined;
+    return { ...q, unitId: previous?.unitId ?? `${task.id}-question-bank`, sourceNote };
+  });
+  const units = task.units.map(unit => ({ ...unit, questionIds: questions.filter(q => q.unitId === unit.id).map(q => q.id) }));
+  const unassigned = questions.filter(q => !units.some(u => u.id === q.unitId));
+  if (unassigned.length) units.push({ id: `${task.id}-question-bank`, title: 'Preguntas del banco central', level: 2, markdown: '', questionIds: unassigned.map(q => q.id) });
+  return { ...task, units, questions };
+}
+
 const files = import.meta.glob("../CCSE26/Tarea*.md", {
   query: "?raw",
   import: "default",
@@ -136,6 +164,8 @@ const files = import.meta.glob("../CCSE26/Tarea*.md", {
 export const tasks = [1, 2, 3, 4, 5].map((id) => {
   const raw = files[`../CCSE26/Tarea${id}.md`];
   if (!raw) throw new Error(`Falta CCSE26/Tarea${id}.md`);
-  return parseTask(raw, id);
+  const task = attachQuestionBank(parseTask(raw, id), questionBank);
+  task.questions = task.questions.map(q => ({ ...q, options: practiceOptions(q.id, q.prompt, q.answer) }));
+  return task;
 });
 export const allQuestions = tasks.flatMap((t) => t.questions);

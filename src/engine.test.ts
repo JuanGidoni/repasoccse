@@ -8,19 +8,24 @@ describe('Integridad de los cinco archivos fuente', () => {
     expect(tasks.map(t => t.questions.length)).toEqual([120, 36, 24, 36, 84]);
     expect(new Set(allQuestions.map(q => q.id)).size).toBe(300);
     for (const t of tasks) {
-      const lines = readFileSync(t.source, 'utf8').split(/\r?\n/);
+      const lines = readFileSync('CCSE26/PreguntasyRespuestas.md', 'utf8').split(/\r?\n/);
       expect(t.questions.map(q => q.id)).toEqual(Array.from({ length: t.questions.length }, (_, i) => String(t.id * 1000 + i + 1)));
       for (const q of t.questions) {
         expect(lines[q.line - 1]).toContain(q.prompt);
-        expect(lines.slice(q.line).find(line => line.trim())).toBe(`- ${t.id === 5 ? '**' : ''}${q.answer}${t.id === 5 ? '**' : ''}`);
+        expect(lines.slice(q.line).find(line => line.trim())).toBe(`- ${q.answer}`);
         expect(t.units.find(u => u.id === q.unitId)?.questionIds).toContain(q.id);
       }
     }
   });
-  it('no inventa alternativas ni corrige la discrepancia 060/60', () => {
+  it('mantiene verdadero/falso, tres alternativas únicas y la respuesta original', () => {
     expect(allQuestions.find(q => q.id === '1091')?.answer).toBe('60.');
     expect(tasks[1].questions.every(q => q.options.join(',') === 'Verdadero,Falso')).toBe(true);
-    expect(allQuestions.filter(q => q.taskId !== 2).every(q => q.options.length === 0)).toBe(true);
+    for (const q of allQuestions) {
+      expect(q.options).toHaveLength(q.taskId === 2 ? 2 : 3);
+      expect(new Set(q.options).size).toBe(q.options.length);
+      expect(q.options.filter(option => correctAnswer(q, option))).toHaveLength(1);
+      if (q.taskId !== 2) expect(q.options).toContain(q.answer);
+    }
   });
   it('preserva encabezados de distintos niveles, notas finales y texto sin artefactos de chat', () => {
     expect(tasks[2].units.find(u => u.title === 'Andalucía')?.parentId).toBeTruthy();
